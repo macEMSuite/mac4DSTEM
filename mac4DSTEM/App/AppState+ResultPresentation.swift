@@ -320,12 +320,13 @@ extension AppState {
         }
         let totalPatterns = descriptor.rx * descriptor.ry
         let scanVerb = datasetSession.isLoading ? "Scanning patterns" : "Computing virtual detector…"
+        // A run beside the infobar's readout says what it does only: the readout has the counts (#361). A load's status keeps them.
         let cancellation = quiet ? nil : beginCancellableOperation(
             "Virtual detector",
-            status: SystemMonitor.scanProgressStatus(
-                scanVerb, processed: 0, total: totalPatterns, descriptor: descriptor,
-                bytesPerPattern: fourD.view.readBytesPerPattern
-            ),
+            status: datasetSession.isLoading
+                ? SystemMonitor.scanProgressStatus(scanVerb, processed: 0, total: totalPatterns, descriptor: descriptor,
+                                                   bytesPerPattern: fourD.view.readBytesPerPattern)
+                : scanVerb,
             totalUnits: totalPatterns
         )
         defer {
@@ -368,10 +369,10 @@ extension AppState {
                         self.updateCancellableOperation(
                             token,
                             progress: clipped,
-                            status: SystemMonitor.scanProgressStatus(
-                                scanVerb, processed: processed,
-                                total: totalPatterns, descriptor: d, bytesPerPattern: bytesPerPattern
-                            )
+                            status: self.datasetSession.isLoading
+                                ? SystemMonitor.scanProgressStatus(scanVerb, processed: processed, total: totalPatterns,
+                                                                   descriptor: d, bytesPerPattern: bytesPerPattern)
+                                : scanVerb
                         )
                     }
                 }

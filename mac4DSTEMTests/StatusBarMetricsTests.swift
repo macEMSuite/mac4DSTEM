@@ -154,13 +154,13 @@ final class StatusBarMetricsTests: XCTestCase {
         XCTAssertTrue(line.hasSuffix("positions"))
     }
 
-    /// The infobar's live run (owner, 2026-09-22 late): done / total, the
-    /// rate, elapsed and ETA in one line; a part not known yet is absent.
-    func testTheRunLineJoinsCountsRateAndTimesAndOmitsWhatIsUnknown() {
+    /// The infobar's live run: done / total, elapsed and ETA in one line; a part not known yet is absent. No rate (#361): it was
+    /// the longest token and crowded the bar (the Run tab keeps it). Mutation: the rate back in the line, red.
+    func testTheRunLineJoinsCountsAndTimesAndOmitsWhatIsUnknown() {
         let metrics = AnalysisOperationMetrics(elapsed: 53, unitsPerSecond: 312.4, eta: 42)
         XCTAssertEqual(
             OperationMetricsFormat.runLine(done: 1204, total: 4050, metrics: metrics, for: "Disk detection"),
-            "\(SystemMonitor.count(1204)) / \(SystemMonitor.count(4050)) · 312.4 positions/s · 53 s · ETA 42 s")
+            "\(SystemMonitor.count(1204)) / \(SystemMonitor.count(4050)) · 53 s · ETA 42 s")
         XCTAssertEqual(
             OperationMetricsFormat.runLine(done: nil, total: nil, metrics: AnalysisOperationMetrics(elapsed: 3, unitsPerSecond: nil, eta: nil), for: nil),
             "3 s")
@@ -190,5 +190,16 @@ final class StatusBarMetricsTests: XCTestCase {
         }
         XCTAssertLessThanOrEqual(widest.width, LayoutPolicy.runReadoutWidth,
             "\"\(widest.line)\" is \(widest.width) pt; widen LayoutPolicy.runReadoutWidth — do NOT let the text size itself.")
+    }
+
+    /// One ellipsis, in one place (#361): a verb ending in "…" loses it when the counts follow, so a truncated status line can't
+    /// read "Computing virtual detector……". Mutation: the verb kept as given, red.
+    func testAScanStatusHasNoEllipsisBeforeItsCounts() {
+        let d = DatasetDescriptor(filePath: "/tmp/a.h5", datasetPath: "/d", shape: [128, 128, 64, 64], dtypeDescription: "float32", chunkShape: nil)
+        let status = SystemMonitor.scanProgressStatus("Computing virtual detector…", processed: 7936, total: 16384, descriptor: d)
+        XCTAssertTrue(status.hasPrefix("Computing virtual detector \(SystemMonitor.count(7936))"), status)
+        XCTAssertFalse(status.contains("…"), status)
+        XCTAssertEqual(SystemMonitor.runningVerb("Scanning patterns"), "Scanning patterns")
+        XCTAssertEqual(SystemMonitor.runningVerb("Loading..."), "Loading")
     }
 }

@@ -63,8 +63,10 @@ extension OperationMetricsFormat {
         return line(elapsed: metrics.elapsed, eta: metrics.eta)
     }
 
+    /// "7,936 / 16,384 · 3 s · ETA 4 s": no rate (#361). It was the longest token and crowded the bar; ShellLayout's `line` keeps it
+    /// out for the same reason, and the Run tab still shows it.
     static func runLine(done: Int?, total: Int?, metrics: AnalysisOperationMetrics?, for operation: String?) -> String {
-        runLine(done: done, total: total, elapsed: metrics?.elapsed, eta: metrics?.eta, rate: metrics?.unitsPerSecond,
+        runLine(done: done, total: total, elapsed: metrics?.elapsed, eta: metrics?.eta, rate: nil,
                 unit: throughputUnit(for: operation))
     }
 
