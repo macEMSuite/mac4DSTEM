@@ -1,1 +1,13 @@
-First release on the Mac App Store.
+Version 5.3.1 fixes wrong or misleading results and tidies the window.
+
+• Placing a virtual detector no longer moves the calibrated origin. A beam centre by hand is now set on purpose in Prepare: Use Detector Centre as Origin, or type x and y.
+• Phase mapping refuses an origin that is not a measured beam centre, instead of mapping on a guess.
+• A typed orientation relationship now stands for all its variants in the matrix: one pair, as a paper states it, is enough.
+• Fit Distortion from Spots fits Phase mapping's matrix, not the last phase added, and a new dataset starts with an empty phase list.
+• Calibrate Q from crystal reads diamond-type rings from the right first ring.
+• Opening a dataset writes nothing on the disk that holds it.
+• A cube from another file no longer shows the previous file's EDS maps.
+• An empty virtual detector and an origin with no measured position are refused rather than drawn as a dark image.
+• Detection keeps the count of positions where it failed after calibration.
+• The sidebar's task rows and Next/Previous Task work with the keyboard and VoiceOver.
+• Software updates use a new signing key.
