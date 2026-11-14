@@ -37,6 +37,15 @@ extension SystemMonitor {
         let patterns = "\(count(processed)) / \(count(total)) patterns"
         let bytes = "\(byteString(processed * bytesPerPattern))"
             + " of \(byteString(total * bytesPerPattern))"
-        return "\(verb) \(patterns) · \(bytes)"
+        // One ellipsis, in one place (#361): a verb that ends in "…" ("Computing virtual detector…") loses it when the counts follow,
+        // or a truncated line read "Computing virtual detector……".
+        return "\(runningVerb(verb)) \(patterns) · \(bytes)"
+    }
+
+    /// `verb` without a trailing ellipsis ("…" or "...").
+    package nonisolated static func runningVerb(_ verb: String) -> String {
+        var v = verb
+        while v.hasSuffix("…") || v.hasSuffix(".") { v.removeLast() }
+        return v
     }
 }

@@ -46,17 +46,35 @@ struct WorkspaceView: View {
     @ViewBuilder
     private var runSlot: some View {
         if showsOperationProgress {
-            InfobarRunReadout(
-                operation: appState.activeOperation,
-                progress: appState.progress,
-                line: { date in
-                    OperationMetricsFormat.runLine(
-                        done: appState.operationCenter.unitsDone,
-                        total: appState.operationCenter.totalUnits,
-                        metrics: appState.activeOperationMetrics(at: date),
-                        for: appState.activeOperation)
-                },
-                onCancel: appState.canCancelActiveOperation ? { appState.cancelActiveOperation() } : nil)
+            HStack(spacing: LayoutPolicy.infobarProgressSpacing) {
+                InfobarRunReadout(
+                    operation: appState.activeOperation,
+                    progress: appState.progress,
+                    line: { date in
+                        OperationMetricsFormat.runLine(
+                            done: appState.operationCenter.unitsDone,
+                            total: appState.operationCenter.totalUnits,
+                            metrics: appState.activeOperationMetrics(at: date),
+                            for: appState.activeOperation)
+                    },
+                    onCancel: nil)
+                // Cancel as a borderless icon with its name as the tooltip (#361): the shell's text button drew "Cancel" over the
+                // icon its cancel role adds at the bar's small size. It keeps its space first.
+                if appState.canCancelActiveOperation {
+                    Button(role: .cancel) {
+                        appState.cancelActiveOperation()
+                    } label: {
+                        Label("Cancel", systemImage: "xmark.circle.fill")
+                    }
+                    .labelStyle(.iconOnly)
+                    .buttonStyle(.borderless)
+                    .help("Cancel \(appState.activeOperation ?? "the running operation")")
+                    .fixedSize()
+                    .layoutPriority(2)
+                    .accessibilityLabel("Cancel \(appState.activeOperation ?? "the running operation")")
+                    .accessibilityIdentifier("status.footer.stop")
+                }
+            }
         } else if let last = appState.operationCenter.lastFinished {
             InfobarLastRun(OperationMetricsFormat.lastRun(last.name, elapsed: last.elapsed, cancelled: last.outcome == .cancelled))
         }

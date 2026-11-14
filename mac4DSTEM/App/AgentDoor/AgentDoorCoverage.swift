@@ -43,6 +43,7 @@ enum AgentDoorCoverage {
         "calibration.action.originProbe": .tool("run_calibration"),
         "calibration.action.qCrystal": .tool("run_calibration"),
         "calibration.action.restoreFittedOrigin": .tool("run_calibration"),
+        "status.footer.stop": .tool("stop_run"),   // the infobar's Cancel, app-side since #361
         "calibration.action.originFromDetector": .tool("set_calibration"),   // origin_x and origin_y: the centre it reads (#348)
         "calibration.manualOrigin": .tool("set_calibration"),
         "calibration.manualOrigin.x": .tool("set_calibration"),
