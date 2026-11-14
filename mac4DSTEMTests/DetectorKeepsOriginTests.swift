@@ -52,6 +52,20 @@ final class DetectorKeepsOriginTests: XCTestCase {
         XCTAssertEqual(state.calibrationSession.calibration.originProvenance, .fitted)
     }
 
+    /// A fit after a centre by hand clears it from the recorded slot: a later crop that drops the fitted maps must not bring the
+    /// hand-set point back as a recorded, measured centre. Mutation: no `clearManualCentre` in the fit - the 30 stays, red.
+    func testAFitReplacesTheManualCentreEverywhere() async throws {
+        let state = AppState()
+        await state.openDemoFixture()
+        state.setManualOrigin(x: 30, y: 30)
+        XCTAssertEqual(state.calibrationSession.calibration.recordedOriginX, 30)
+        await state.calibrateOrigin()
+        let calibration = state.calibrationSession.calibration
+        XCTAssertEqual(calibration.originProvenance, .fitted, state.statusText)
+        XCTAssertNotEqual(calibration.recordedOriginX, 30)
+        XCTAssertNotEqual(calibration.recordedOriginY, 30)
+    }
+
     /// A centre by hand is not a measurement: reciprocal calibration refuses it, in its own words.
     func testAManualCentreIsRefusedForReciprocalMetrology() async throws {
         let state = AppState()

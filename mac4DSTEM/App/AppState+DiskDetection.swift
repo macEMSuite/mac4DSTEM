@@ -107,8 +107,7 @@ extension AppState {
         }
         probeKernel = kernel
         // The learned path needs the full probe IMAGE; draw one (no measured pattern here).
-        let origin = calibrationSession.calibration.referenceOrigin(
-            detectorQX: descriptor.qx, detectorQY: descriptor.qy).point
+        let origin = beamPositionGuess(descriptor: descriptor)
         learnedDetection.probeReference = .init(
             pattern: LearnedDetectionSession.syntheticProbe(qy: descriptor.qy, qx: descriptor.qx, centre: (x: origin.x, y: origin.y), radius: radius),
             centreX: origin.x, centreY: origin.y, radius: radius, source: .synthetic)
@@ -128,9 +127,7 @@ extension AppState {
         await Self.probeKernelBeforeLanding?()
         guard epoch == datasetSession.epoch else { return }
         let began = ContinuousClock.now
-        let origin = calibrationSession.calibration.referenceOrigin(  // single derivation point
-            detectorQX: d.qx, detectorQY: d.qy
-        ).point
+        let origin = beamPositionGuess(descriptor: d)
         guard let kernel = ProbeKernel.measured(
             pattern: pattern, originX: origin.x, originY: origin.y, radius: radius, mode: mode
         ) else {

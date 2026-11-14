@@ -1452,6 +1452,22 @@ extension AppState {
         scheduleLiveVirtualDetector()
     }
 
+    /// A fit replaces a centre by hand: it leaves the recorded slot it lived in, so a later crop that drops the maps cannot bring it
+    /// back as a recorded (measured) centre (#348 review).
+    func clearManualCentre() {
+        guard calibrationSession.calibration.originProvenance == .manual else { return }
+        calibrationSession.calibration.recordedOriginX = nil
+        calibrationSession.calibration.recordedOriginY = nil
+    }
+
+    /// Where to cut a window around the direct beam (the centre-of-mass field, the probe kernels): the reference origin, or, when
+    /// nothing is measured, recorded or set by hand, the virtual detector, which a person puts on the beam. A window, not the
+    /// calibration: the origin itself never follows the detector (#348).
+    func beamPositionGuess(descriptor: DatasetDescriptor) -> (x: Float, y: Float) {
+        let reference = calibrationSession.calibration.referenceOrigin(detectorQX: descriptor.qx, detectorQY: descriptor.qy)
+        return reference.kind == .geometricMiddle ? (aperture.centerX, aperture.centerY) : reference.point
+    }
+
     /// Prepare's "Use Detector Centre as Origin" (#348): the virtual detector's centre, where a person puts it on the direct beam.
     func useDetectorCentreAsOrigin() {
         setManualOrigin(x: aperture.centerX, y: aperture.centerY)

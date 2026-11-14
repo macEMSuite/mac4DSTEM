@@ -251,8 +251,8 @@ struct PrepareSettings: View {
         // readiness rows, so the same value, unit, provenance and consequence
         // cannot drift between duplicate controls.
         InspectorSection("Fit diagnostics & advanced correction", expanded: $showsDiagnostics) {
-            InspectorValueRow("Aperture center", calibration.originProvenance.displayName)
-                .help("Source of the center used by the virtual-detector aperture. Per-position fitted origins are reported separately.")
+            InspectorValueRow("Origin source", calibration.originProvenance.displayName)
+                .help("Where the origin comes from: a fit, the file, the session, or a centre set by hand. Per-position fitted origins are reported separately.")
 
             InspectorRow("Origin fit") {
                 Picker("Origin fit", selection: $session.originFitFunction) {

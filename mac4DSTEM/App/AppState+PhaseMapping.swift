@@ -705,12 +705,12 @@ extension AppState {
             detectorQX: d.qx, detectorQY: d.qy)
         guard !origin.kind.isMeasuredBeamCentre else { return nil }
         if canRestoreFittedOrigin {
-            return "Phase mapping needs the measured beam centre, and it was set aside when the virtual detector was moved "
-                + "off it: the vectors would be centred on the detector, not on the beam. Restore Fitted Origin in "
-                + "Calibration, or run Calibrate Origin."
+            return "Phase mapping needs the measured beam centre, and it was set aside for a centre set by hand: the vectors "
+                + "would be centred on that centre, not on a measured beam. Restore Fitted Origin in Calibration, or run "
+                + "Calibrate Origin."
         }
-        return "Phase mapping needs a measured beam centre: without one the vectors would be centred on the virtual "
-            + "detector's position, not on the beam. Run Calibrate Origin first."
+        return "Phase mapping needs a measured beam centre: without one the vectors would be centred on a guess, not on "
+            + "the beam. Run Calibrate Origin first."
     }
 
     /// The sentence strain, ACOM and q from crystal refuse stale disks with,
