@@ -73,6 +73,26 @@ final class AgentDoorCalibrationTests: XCTestCase {
         withExtendedLifetime(state) {}
     }
 
+    /// #348: a beam centre by hand comes through set_calibration, x and y together, as Prepare's typed origin; the detector's own
+    /// tool never moves it.
+    func testABeamCentreByHandIsSetCalibrationsOriginXAndY() async throws {
+        let state = AppState()
+        await state.openDemoFixture(specification: demoCrop)
+        XCTAssertTrue(state.hasDataset, state.statusText)
+        door.enroll(state) { [weak state] in state?.agentSummary() ?? [:] }
+        door.runsAllowed = true
+        let half = try await call("set_calibration", ["origin_x": 30])
+        XCTAssertTrue(half.refused)
+        XCTAssertTrue(half.text.contains("together"), half.text)
+        let set = try await call("set_calibration", ["origin_x": 30.5, "origin_y": 31.25])
+        XCTAssertFalse(set.refused, set.text)
+        let calibration = state.calibrationSession.calibration
+        XCTAssertEqual(calibration.originProvenance, .manual)
+        let reference = calibration.referenceOrigin(detectorQX: 64, detectorQY: 64)
+        XCTAssertEqual(reference.kind, .manualCentre)
+        XCTAssertEqual(reference.x, 30.5); XCTAssertEqual(reference.y, 31.25)
+    }
+
     /// Mutation: a unit is applied after its size (the size lands in the old unit), or a field is skipped - red.
     func testTypedScalesLandAsPreparesFieldsPutThem() async throws {
         let state = AppState()

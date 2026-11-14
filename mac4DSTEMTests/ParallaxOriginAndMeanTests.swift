@@ -59,8 +59,7 @@ final class ParallaxDiffractionOriginTests: XCTestCase {
 
     private func resolved(_ calibration: Calibration, aperture: Aperture) throws -> ParallaxPhysicalCalibration {
         try ParallaxPhysicalCalibration.resolve(
-            calibration: calibration, apertureCenterX: aperture.centerX,
-            apertureCenterY: aperture.centerY, acceleratingVoltageKV: 200)
+            calibration: calibration, acceleratingVoltageKV: 200)
     }
 
     /// App x is the detector column (py4DSTEM qy), app y the row (qx).
@@ -69,8 +68,7 @@ final class ParallaxDiffractionOriginTests: XCTestCase {
         calibration.origin = maps(x: 100, y: 90)
         calibration.originProvenance = .fitted
         calibrated(&calibration)
-        let origin = ParallaxPhysicalCalibration.diffractionOrigin(
-            calibration: calibration, apertureCentre: (x: 105, y: 90))
+        let origin = try XCTUnwrap(ParallaxPhysicalCalibration.diffractionOrigin(calibration: calibration))
         XCTAssertEqual(origin.qy, 100)
         XCTAssertEqual(origin.qx, 90)
         let physical = try resolved(calibration, aperture: Aperture(centerX: 105, centerY: 90))
@@ -89,15 +87,25 @@ final class ParallaxDiffractionOriginTests: XCTestCase {
         XCTAssertEqual(physical.originQX, 61.5)
     }
 
-    /// With no measured origin the aperture the user placed IS the origin — the
-    /// `parallax-preprocessing-test` (a retired harness; the kit's parity tests hold it) axis-convention case, unchanged.
-    func testManualOriginFallsBackToTheAperture() throws {
+    /// A centre set by hand (Prepare, #348) is the origin, wherever the detector sits — the `parallax-preprocessing-test` (a retired
+    /// harness; the kit's parity tests hold it) axis-convention case. It used to be the aperture itself.
+    func testAManualCentreIsTheOriginNotTheAperture() throws {
+        var calibration = Calibration()
+        calibration.recordedOriginX = 3.65; calibration.recordedOriginY = 2.35
+        calibration.originProvenance = .manual
+        calibrated(&calibration)
+        let physical = try resolved(calibration, aperture: Aperture(centerX: 50, centerY: 50))
+        XCTAssertEqual(physical.originQX, 2.35, accuracy: 1e-6)
+        XCTAssertEqual(physical.originQY, 3.65, accuracy: 1e-6)
+    }
+
+    /// No origin at all (nothing measured, recorded or set by hand): refused, never the detector's corner or the aperture.
+    func testNoOriginIsRefused() {
         var calibration = Calibration()
         calibration.originProvenance = .manual
         calibrated(&calibration)
-        let physical = try resolved(calibration, aperture: Aperture(centerX: 3.65, centerY: 2.35))
-        XCTAssertEqual(physical.originQX, 2.35, accuracy: 1e-6)
-        XCTAssertEqual(physical.originQY, 3.65, accuracy: 1e-6)
+        XCTAssertNil(ParallaxPhysicalCalibration.diffractionOrigin(calibration: calibration))
+        XCTAssertThrowsError(try resolved(calibration, aperture: Aperture(centerX: 3.65, centerY: 2.35)))
     }
 
     // MARK: - AppState wiring
@@ -125,9 +133,8 @@ final class ParallaxDiffractionOriginTests: XCTestCase {
     /// "drag overrides the fit" symptom is this documented behaviour).
     func testACentreDragMakesTheDraggedCentreTheManualOriginAndRestoreReturnsTheFit() throws {
         let state = fittedState()
-        var dragged = state.aperture
-        dragged.centerX += 5
-        state.updateAperture(dragged)
+        // A centre by hand (#348: Prepare's typed origin; a detector drag no longer does this).
+        state.setManualOrigin(x: state.aperture.centerX + 5, y: state.aperture.centerY)
         XCTAssertEqual(state.calibrationSession.calibration.originProvenance, .manual)
         let afterDrag = try originUsed(state)
         XCTAssertEqual(afterDrag.qy, 105)

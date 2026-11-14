@@ -79,8 +79,7 @@ package final class SessionGates {
     /// going to work.
     package func reciprocalMetrologyRefusal(
         for calibration: Calibration,
-        descriptor: DatasetDescriptor,
-        apertureCentre: (x: Float, y: Float)?
+        descriptor: DatasetDescriptor
     ) -> String? {
         // The predicate is asked of `Calibration`, not re-derived here. An
         // earlier version composed `originQuantitativeRefusal` with its own
@@ -90,26 +89,18 @@ package final class SessionGates {
         // Gate B found it by deleting half the unused predicate and watching
         // the fixture stay green.
         guard !calibration.originSupportsReciprocalMetrology(
-            detectorQX: descriptor.qx, detectorQY: descriptor.qy,
-            apertureCentre: apertureCentre
+            detectorQX: descriptor.qx, detectorQY: descriptor.qy
         ) else { return nil }
 
         if let refusal = originQuantitativeRefusal(for: calibration) { return refusal }
         let origin = calibration.referenceOrigin(
-            detectorQX: descriptor.qx, detectorQY: descriptor.qy,
-            apertureCentre: apertureCentre
+            detectorQX: descriptor.qx, detectorQY: descriptor.qy
         )
         switch origin.kind {
-        case .apertureCentre:
-            // Deliberately does NOT say "the aperture you placed". Every app
-            // call site passes a non-nil aperture and the aperture starts at
-            // the detector's middle, so this fires for users who have placed
-            // nothing — telling them "where you put it" describes an action
-            // they did not take (Gate B finding).
-            return "Reciprocal calibration needs a measured beam centre. This dataset has none, "
-                + "so Bragg vectors would be re-centred on the detector aperture's current "
-                + "position, which is not a measurement of where the beam is. Run Calibrate "
-                + "Origin, or enter the reciprocal pixel size manually."
+        case .manualCentre:
+            return "Reciprocal calibration needs a measured beam centre. The origin is a centre set by hand, "
+                + "which is not a measurement of where the beam is. Run Calibrate Origin, or enter the "
+                + "reciprocal pixel size manually."
         case .geometricMiddle:
             return "Reciprocal calibration needs a measured beam centre. This dataset has none, "
                 + "so Bragg vectors would be re-centred on the detector's geometric middle — a "

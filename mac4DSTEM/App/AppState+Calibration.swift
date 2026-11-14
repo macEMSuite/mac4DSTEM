@@ -388,8 +388,7 @@ extension AppState {
         guard let fourD = datasetSession.fourD, let descriptor else { return nil }
         let origins = calibrationSession.calibration.origin?.interleavedFitted
         let center = calibrationSession.calibration.referenceOrigin(
-            detectorQX: descriptor.qx, detectorQY: descriptor.qy,
-            apertureCentre: (x: aperture.centerX, y: aperture.centerY)
+            detectorQX: descriptor.qx, detectorQY: descriptor.qy
         ).point
         let d = descriptor
         let result = try await VirtualDetector.tiledCenterOfMass(

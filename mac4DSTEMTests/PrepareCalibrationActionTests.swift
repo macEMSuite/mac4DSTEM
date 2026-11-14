@@ -52,15 +52,15 @@ final class PrepareCalibrationActionTests: XCTestCase {
     /// for a file's maps. (2026-09-30 night, ADR 050 card A1: the drag parks the file's
     /// recorded centre, so the old "was discarded" clause is gone.)
     func testTheFileClauseIsSaidOnlyForAnOriginThatCameFromAFile() {
-        let file = "Aperture center replaced the file's origin."
+        let file = "A manual centre replaced the file's origin."
         XCTAssertEqual(CalibrationReadinessRow.originReplacedDetail(displaced: .fileMaps), file)
         XCTAssertEqual(CalibrationReadinessRow.originReplacedDetail(displaced: .fileMean), file)
         XCTAssertEqual(CalibrationReadinessRow.originReplacedDetail(displaced: .fitted),
-                       "Aperture center replaced the fitted origin.")
+                       "A manual centre replaced the fitted origin.")
         XCTAssertEqual(CalibrationReadinessRow.originReplacedDetail(displaced: .sessionMaps),
-                       "Aperture center replaced the fitted origin.")
+                       "A manual centre replaced the fitted origin.")
         XCTAssertEqual(CalibrationReadinessRow.originReplacedDetail(displaced: nil),
-                       "Aperture center replaced the fitted origin.")
+                       "A manual centre replaced the fitted origin.")
     }
 
     // MARK: item 3 — Prepare says what was not carried

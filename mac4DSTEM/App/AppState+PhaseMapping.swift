@@ -702,7 +702,7 @@ extension AppState {
     var phaseMappingOriginRefusal: String? {
         guard let d = descriptor else { return nil }
         let origin = calibrationSession.calibration.referenceOrigin(
-            detectorQX: d.qx, detectorQY: d.qy, apertureCentre: (x: aperture.centerX, y: aperture.centerY))
+            detectorQX: d.qx, detectorQY: d.qy)
         guard !origin.kind.isMeasuredBeamCentre else { return nil }
         if canRestoreFittedOrigin {
             return "Phase mapping needs the measured beam centre, and it was set aside when the virtual detector was moved "
@@ -740,8 +740,7 @@ extension AppState {
         guard !phaseMapping.zoneAxisFits.isEmpty, let d = descriptor else { return nil }
         let calibration = calibrationSession.calibration
         let origin = calibration.referenceOrigin(
-            detectorQX: d.qx, detectorQY: d.qy,
-            apertureCentre: (x: aperture.centerX, y: aperture.centerY)).point
+            detectorQX: d.qx, detectorQY: d.qy).point
         return phaseMapping.zoneAxisStaleness(
             currentInvAngstromPerPixel: acomScaleSemantics.invAngstromPerPixel,
             currentCalibration: PhaseMappingProduct.CalibrationStamp(

@@ -135,8 +135,7 @@ final class QCalibrationOriginGateTests: XCTestCase {
             radiiPixels: [4.0, 8.0, 16.0].map { PlantedQCalibration.g($0) / deltaQ }, on: state)
 
         XCTAssertNil(state.gates.reciprocalMetrologyRefusal(
-            for: state.calibrationSession.calibration, descriptor: descriptor,
-            apertureCentre: (x: state.aperture.centerX, y: state.aperture.centerY)
+            for: state.calibrationSession.calibration, descriptor: descriptor
         ), "a usable fitted origin must pass the metrology gate")
 
         await state.calibrateQFromCrystal()
@@ -251,7 +250,7 @@ final class QCalibrationOriginGateTests: XCTestCase {
 
         let aperture = (x: state.aperture.centerX, y: state.aperture.centerY)
         XCTAssertNotNil(state.gates.reciprocalMetrologyRefusal(
-            for: state.calibrationSession.calibration, descriptor: descriptor, apertureCentre: aperture
+            for: state.calibrationSession.calibration, descriptor: descriptor
         ), "with nothing measured, the gate refuses — the other half of the pair")
 
         state.calibrationSession.calibration.recordedOriginX = Float(descriptor.qx) / 2
@@ -259,7 +258,7 @@ final class QCalibrationOriginGateTests: XCTestCase {
         state.calibrationSession.calibration.originProvenance = .fileMean
 
         XCTAssertNil(state.gates.reciprocalMetrologyRefusal(
-            for: state.calibrationSession.calibration, descriptor: descriptor, apertureCentre: aperture
+            for: state.calibrationSession.calibration, descriptor: descriptor
         ), "a recorded beam centre IS a measurement and must be admitted")
 
         // And it must be used as ITSELF. Before S13 this state produced
@@ -268,7 +267,7 @@ final class QCalibrationOriginGateTests: XCTestCase {
         // the two answers differ.
         state.calibrationSession.calibration.recordedOriginX = Float(descriptor.qx) / 2 + 7
         let resolved = state.calibrationSession.calibration.referenceOrigin(
-            detectorQX: descriptor.qx, detectorQY: descriptor.qy, apertureCentre: aperture
+            detectorQX: descriptor.qx, detectorQY: descriptor.qy
         )
         XCTAssertEqual(resolved.kind, .recordedMean)
         XCTAssertEqual(resolved.x, Float(descriptor.qx) / 2 + 7, accuracy: 1e-6,

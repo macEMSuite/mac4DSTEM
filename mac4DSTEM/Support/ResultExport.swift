@@ -424,8 +424,7 @@ extension AppState {
         var keys: [String: String] = [:]
         if let descriptor {
             let origin = calibrationSession.calibration.referenceOrigin(
-                detectorQX: descriptor.qx, detectorQY: descriptor.qy,
-                apertureCentre: (x: aperture.centerX, y: aperture.centerY)
+                detectorQX: descriptor.qx, detectorQY: descriptor.qy
             )
             keys["origin_reference"] = origin.kind.rawValue
             keys["origin_reference_is_measured"] =

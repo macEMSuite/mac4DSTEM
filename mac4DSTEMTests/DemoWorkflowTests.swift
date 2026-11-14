@@ -54,10 +54,10 @@ final class DemoWorkflowTests: XCTestCase {
         calibration.rPixelUnits = "nm"
         calibration.rotationRad = 0
         calibration.transposeQR = false
-        calibration.originProvenance = .fileMaps
+        calibration.originProvenance = .fileMean
+        calibration.recordedOriginX = 32; calibration.recordedOriginY = 32   // the demo's centre (#348: no aperture fallback)
         let physical = try ParallaxPhysicalCalibration.resolve(
             calibration: calibration,
-            apertureCenterX: 32, apertureCenterY: 32,
             acceleratingVoltageKV: 200
         )
         let result: ParallaxPreprocessResult

@@ -1412,6 +1412,11 @@ extension AppState {
         let parked = calibrationSession.parkedRecordedOrigin
         guard superseded != nil || parked != nil else { return }
         clearSupersededFittedOrigin()
+        // The manual centre (#348) lives in the recorded slot: it leaves with the undo, and a parked recorded centre takes its place.
+        if calibrationSession.calibration.originProvenance == .manual {
+            calibrationSession.calibration.recordedOriginX = nil
+            calibrationSession.calibration.recordedOriginY = nil
+        }
         if let superseded {
             calibrationSession.calibration.origin = superseded.maps
             calibrationSession.calibration.originProvenance = superseded.provenance
@@ -1441,45 +1446,54 @@ extension AppState {
     /// image continuously (coalesced, quiet — no status/busy churn).
     func updateAperture(_ newAperture: Aperture) {
         activePane = .diffraction
-        if newAperture.centerX != aperture.centerX || newAperture.centerY != aperture.centerY {
-            // A manual center supersedes fitted per-position maps. Retaining
-            // those maps inside `calibration` would make export silently
-            // ignore the manual value — so they move to the recoverable
-            // superseded slot instead of being destroyed.
-            if let displaced = calibrationSession.calibration.origin {
-                let fitLineage = replay.lineage.activeNodes()
-                    .first { $0.kind == "calibration_origin" }?.parameters
-                supersededFittedOrigin = (displaced, calibrationSession.calibration.originProvenance, fitLineage)
-                canRestoreFittedOrigin = true
-                statusText = "Manual aperture center — fitted origin set aside (Restore Fitted Origin in Calibration undoes this)"
-                recordOriginSetAsideRun()
-            }
-            calibrationSession.calibration.origin = nil
-            // The file's recorded mean leaves the live calibration with them (Gate B): v2 S13
-            // gave that value a home of its own but did not clear it here, so
-            // `referenceOrigin` kept returning `.recordedMean` — the FILE's
-            // number — while `originProvenance` read `.manual`, and the CoM
-            // field and the measured probe kernel silently stopped using the
-            // centre the user had just dragged to. It is PARKED, not destroyed
-            // (owner, ADR 050 card A1): Restore returns it. Read before
-            // `originProvenance` is overwritten below.
-            if let x = calibrationSession.calibration.recordedOriginX,
-               let y = calibrationSession.calibration.recordedOriginY {
-                calibrationSession.parkedRecordedOrigin = .init(
-                    x: x, y: y, provenance: calibrationSession.calibration.originProvenance)
-                canRestoreFittedOrigin = true
-                if supersededFittedOrigin == nil {
-                    statusText = "Manual aperture center — the file's recorded center set aside (Restore Fitted Origin in Calibration undoes this)"
-                }
-            }
-            calibrationSession.calibration.recordedOriginX = nil
-            calibrationSession.calibration.recordedOriginY = nil
-            calibrationSession.calibration.originProvenance = .manual
-            phaseContrast.parallaxPreprocess = nil
-            phaseContrast.parallaxAlignment = nil
-        }
+        // Placing a virtual detector never changes the calibration (#348, as py4DSTEM and pyxem keep the two apart): a dark-field
+        // detector on a spot used to become the beam centre. A centre by hand is set in Prepare (`setManualOrigin`).
         aperture = newAperture
         scheduleLiveVirtualDetector()
+    }
+
+    /// Prepare's "Use Detector Centre as Origin" (#348): the virtual detector's centre, where a person puts it on the direct beam.
+    func useDetectorCentreAsOrigin() {
+        setManualOrigin(x: aperture.centerX, y: aperture.centerY)
+    }
+
+    /// A beam centre set by hand (Prepare: the detector centre, or typed x and y in detector pixels). The fitted per-position maps
+    /// and the file's recorded centre are set aside, not destroyed: Restore Fitted Origin returns them. The centre is kept in the
+    /// recorded slot with provenance `.manual` (`Calibration.referenceOrigin` reads it as `.manualCentre`, which quantitative steps
+    /// refuse as a measurement).
+    func setManualOrigin(x: Float, y: Float) {
+        guard x.isFinite, y.isFinite else { return }
+        let calibration = calibrationSession.calibration
+        if calibration.originProvenance == .manual, calibration.recordedMeanOrigin.map({ $0.x == x && $0.y == y }) == true { return }
+        // A manual center supersedes fitted per-position maps. Retaining
+        // those maps inside `calibration` would make export silently
+        // ignore the manual value — so they move to the recoverable
+        // superseded slot instead of being destroyed.
+        if let displaced = calibration.origin {
+            let fitLineage = replay.lineage.activeNodes()
+                .first { $0.kind == "calibration_origin" }?.parameters
+            supersededFittedOrigin = (displaced, calibration.originProvenance, fitLineage)
+            canRestoreFittedOrigin = true
+            statusText = "Manual origin — fitted origin set aside (Restore Fitted Origin in Calibration undoes this)"
+            recordOriginSetAsideRun()
+        }
+        calibrationSession.calibration.origin = nil
+        // The file's (or session's) recorded centre is PARKED, not destroyed (owner, ADR 050 card A1): Restore returns it. A
+        // previous manual centre is simply replaced.
+        if calibration.originProvenance != .manual,
+           let x0 = calibration.recordedOriginX, let y0 = calibration.recordedOriginY {
+            calibrationSession.parkedRecordedOrigin = .init(x: x0, y: y0, provenance: calibration.originProvenance)
+            canRestoreFittedOrigin = true
+            if supersededFittedOrigin == nil {
+                statusText = "Manual origin — the file's recorded center set aside (Restore Fitted Origin in Calibration undoes this)"
+            }
+        }
+        calibrationSession.calibration.recordedOriginX = x
+        calibrationSession.calibration.recordedOriginY = y
+        calibrationSession.calibration.originProvenance = .manual
+        phaseContrast.parallaxPreprocess = nil
+        phaseContrast.parallaxAlignment = nil
+        if !canRestoreFittedOrigin { statusText = String(format: "Manual origin set at x %.2f, y %.2f px", x, y) }
     }
 
     var manualQPixelUnits: String {

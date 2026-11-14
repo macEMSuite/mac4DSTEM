@@ -61,11 +61,12 @@ package nonisolated struct ParallaxPhysicalCalibration: Equatable, Sendable {
     /// aperture is always supplied, and `resolve` refuses `.geometricDefault`
     /// before asking.
     package static func diffractionOrigin(
-        calibration: Calibration, apertureCentre: (x: Float, y: Float)
-    ) -> (qx: Double, qy: Double) {
-        let origin = calibration.referenceOrigin(
-            detectorQX: 0, detectorQY: 0, apertureCentre: apertureCentre
-        )
+        calibration: Calibration
+    ) -> (qx: Double, qy: Double)? {
+        // #348: the virtual detector is no longer an origin. With nothing measured, recorded or set by hand there is none (the
+        // geometric middle of a 0 x 0 detector is not one), and `resolve` refuses.
+        let origin = calibration.referenceOrigin(detectorQX: 0, detectorQY: 0)
+        guard origin.kind != .geometricMiddle else { return nil }
         // One explicit app -> py4DSTEM detector-axis conversion:
         // app x is the detector column (qy), app y the row (qx).
         return (qx: Double(origin.y), qy: Double(origin.x))
@@ -73,23 +74,13 @@ package nonisolated struct ParallaxPhysicalCalibration: Equatable, Sendable {
 
     package static func resolve(
         calibration: Calibration,
-        apertureCenterX: Float,
-        apertureCenterY: Float,
         acceleratingVoltageKV: Double?
     ) throws -> ParallaxPhysicalCalibration {
-        if case .geometricDefault = calibration.originProvenance {
+        guard calibration.originProvenance != .geometricDefault, let origin = diffractionOrigin(calibration: calibration) else {
             throw ParallaxPreprocessor.PreprocessError.missingCalibration(
                 "Calibrate or explicitly set the diffraction origin."
             )
         }
-        guard apertureCenterX.isFinite, apertureCenterY.isFinite else {
-            throw ParallaxPreprocessor.PreprocessError.missingCalibration(
-                "Set a finite diffraction origin."
-            )
-        }
-        let origin = diffractionOrigin(
-            calibration: calibration, apertureCentre: (x: apertureCenterX, y: apertureCenterY)
-        )
         guard let rotation = calibration.rotationRad, rotation.isFinite else {
             throw ParallaxPreprocessor.PreprocessError.missingCalibration(
                 "Calibrate the R–Q rotation."

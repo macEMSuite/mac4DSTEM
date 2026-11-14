@@ -95,8 +95,6 @@ extension AppState {
         do {
             physical = try ParallaxPhysicalCalibration.resolve(
                 calibration: calibrationSession.calibration,
-                apertureCenterX: aperture.centerX,
-                apertureCenterY: aperture.centerY,
                 acceleratingVoltageKV: calibrationSession.acceleratingVoltage
             )
         } catch {
@@ -485,9 +483,7 @@ extension AppState {
         let physical: ParallaxPhysicalCalibration
         do {
             physical = try ParallaxPhysicalCalibration.resolve(
-                calibration: calibrationSession.calibration, apertureCenterX: aperture.centerX,
-                apertureCenterY: aperture.centerY,
-                acceleratingVoltageKV: calibrationSession.acceleratingVoltage
+                calibration: calibrationSession.calibration, acceleratingVoltageKV: calibrationSession.acceleratingVoltage
             )
         } catch {
             presentPhaseContrastFailure(error)

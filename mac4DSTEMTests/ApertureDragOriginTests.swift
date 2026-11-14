@@ -85,17 +85,34 @@ final class ApertureRadiusDragKeepsFittedOriginTests: XCTestCase {
         XCTAssertEqual(state.aperture.centerX, 69.3133)
     }
 
-    /// Control: the branch the drag is MEANT to reach stays reachable.
-    func testACentreDragStillSetsTheOriginAsideRecoverably() {
+    /// #348: a centre drag moves the detector and nothing else (py4DSTEM and pyxem keep the two apart). Mutation: the old
+    /// set-aside branch in `updateAperture` - the fit is parked, red.
+    func testACentreDragLeavesTheFittedOriginAlone() {
+        let state = stateWithFittedOrigin()
+        let before = state.calibrationSession.calibration
+        var raw = state.aperture
+        raw.centerX = 70.4; raw.centerY = 55.2
+        state.updateAperture(raw.snappedEdit(from: state.aperture, patternWidth: 128, patternHeight: 128))
+        XCTAssertEqual(state.calibrationSession.calibration.origin?.fittedX, before.origin?.fittedX)
+        XCTAssertEqual(state.calibrationSession.calibration.originProvenance, .fitted)
+        XCTAssertFalse(state.canRestoreFittedOrigin)
+        XCTAssertEqual(state.aperture.centerX, 70)
+        XCTAssertEqual(state.aperture.centerY, 55)
+    }
+
+    /// The deliberate act (Prepare's Use Detector Centre as Origin) sets the fit aside recoverably.
+    func testUseDetectorCentreAsOriginSetsTheFitAsideRecoverably() {
         let state = stateWithFittedOrigin()
         var raw = state.aperture
         raw.centerX = 70.4; raw.centerY = 55.2
         state.updateAperture(raw.snappedEdit(from: state.aperture, patternWidth: 128, patternHeight: 128))
+        state.useDetectorCentreAsOrigin()
         XCTAssertNil(state.calibrationSession.calibration.origin)
         XCTAssertEqual(state.calibrationSession.calibration.originProvenance, .manual)
         XCTAssertTrue(state.canRestoreFittedOrigin)
-        XCTAssertEqual(state.aperture.centerX, 70)
-        XCTAssertEqual(state.aperture.centerY, 55)
+        let reference = state.calibrationSession.calibration.referenceOrigin(detectorQX: 128, detectorQY: 128)
+        XCTAssertEqual(reference.kind, .manualCentre)
+        XCTAssertEqual(reference.x, 70); XCTAssertEqual(reference.y, 55)
     }
 
     // MARK: - The set-aside is a lineage fact and a durable warning (owner decision 1, 2026-09-30 night)
@@ -115,10 +132,9 @@ final class ApertureRadiusDragKeepsFittedOriginTests: XCTestCase {
         state.replay.lineage.activeNodes().first { $0.kind == "calibration_origin" }
     }
 
+    /// A centre by hand (Prepare, #348); before #348 a centre drag did this.
     private func dragCentre(_ state: AppState) {
-        var raw = state.aperture
-        raw.centerX = 70.4; raw.centerY = 55.2
-        state.updateAperture(raw.snappedEdit(from: state.aperture, patternWidth: 128, patternHeight: 128))
+        state.setManualOrigin(x: 70, y: 55)
     }
 
     /// A centre drag replaces the origin: the lineage says so, so a strain that
@@ -149,9 +165,7 @@ final class ApertureRadiusDragKeepsFittedOriginTests: XCTestCase {
     func testACentreDragWithNoFitSetAsideRecordsNoNode() {
         let state = AppState()
         state.aperture = Aperture(centerX: 69.3133, centerY: 54.5009, inner: 0, outer: 20)
-        var raw = state.aperture
-        raw.centerX = 70.4; raw.centerY = 55.2
-        state.updateAperture(raw.snappedEdit(from: state.aperture, patternWidth: 128, patternHeight: 128))
+        dragCentre(state)
         XCTAssertEqual(state.calibrationSession.calibration.originProvenance, .manual, "precondition")
         XCTAssertFalse(state.canRestoreFittedOrigin)
         XCTAssertTrue(state.replay.lineage.nodes.isEmpty)
@@ -165,9 +179,7 @@ final class ApertureRadiusDragKeepsFittedOriginTests: XCTestCase {
         _ = recordFitAndAStrainOnIt(state)
         dragCentre(state)
         let after = state.replay.lineage.nodes.filter { $0.kind == "calibration_origin" }.count
-        var raw = state.aperture
-        raw.centerX = 71; raw.centerY = 56
-        state.updateAperture(raw)
+        state.setManualOrigin(x: 71, y: 56)
         XCTAssertEqual(state.replay.lineage.nodes.filter { $0.kind == "calibration_origin" }.count, after)
         XCTAssertEqual(after, 2, "the fit and the manual node")
     }

@@ -102,7 +102,8 @@ extension Mac4DSTEMAgentDoor {
         AgentTool(name: "set_virtual_detector", title: "Virtual detector",
                   summary: "Sets Imaging's virtual detector as its Settings tab does, only what is given: shape (circle, annulus, "
                       + "rectangle, point), a preset (brightField, adf, haadf: sets the radii from the measured probe), and the numbers "
-                      + "in detector pixels (center_x, center_y, inner, outer). The real-space image follows; get_result_image shows it.",
+                      + "in detector pixels (center_x, center_y, inner, outer). The real-space image follows; get_result_image shows it. "
+                      + "Moving it never changes the origin (#348; a centre by hand is set_calibration origin_x and origin_y).",
                   input: .window,
                   parameters: [
                       AgentParameter("shape", .choice(caseNames(VirtualShapeMode.self)), summary: "The detector geometry."),

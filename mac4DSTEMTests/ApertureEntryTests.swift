@@ -112,7 +112,7 @@ final class ApertureEntryTests: XCTestCase {
         return state
     }
 
-    func testATypedRadiusKeepsTheFittedOriginAndATypedCentreSetsItAsideRecoverably() {
+    func testATypedRadiusOrCentreKeepsTheFittedOrigin() {
         let radius = stateWithFittedOrigin()
         XCTAssertTrue(ApertureEntry.apply(31.2, to: .outer, in: radius, patternWidth: 128, patternHeight: 96))
         XCTAssertEqual(radius.aperture.outer, 31)
@@ -123,9 +123,10 @@ final class ApertureEntryTests: XCTestCase {
         let centre = stateWithFittedOrigin()
         XCTAssertTrue(ApertureEntry.apply(70.4, to: .centerX, in: centre, patternWidth: 128, patternHeight: 96))
         XCTAssertEqual(centre.aperture.centerX, 70)
-        XCTAssertNil(centre.calibrationSession.calibration.origin)
-        XCTAssertEqual(centre.calibrationSession.calibration.originProvenance, .manual)
-        XCTAssertTrue(centre.canRestoreFittedOrigin, "the same recoverable set-aside a centre drag makes")
+        // #348: the detector's typed centre moves the detector, never the origin (a centre by hand is Prepare's).
+        XCTAssertNotNil(centre.calibrationSession.calibration.origin)
+        XCTAssertNotEqual(centre.calibrationSession.calibration.originProvenance, .manual)
+        XCTAssertFalse(centre.canRestoreFittedOrigin)
     }
 
     func testATypedValueThatChangesNothingTouchesNothing() {

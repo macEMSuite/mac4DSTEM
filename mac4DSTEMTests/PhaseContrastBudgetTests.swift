@@ -191,12 +191,13 @@ final class PhaseContrastBudgetTests: XCTestCase {
         let load = state.beginDatasetLoading("Opening…")
         await state.activate(descriptor: DemoFourDDataSource.descriptor, reader: ZeroSource(), runInitialAnalysis: false)
         state.finishDatasetLoading(owner: load)
-        state.calibrationSession.calibration.originProvenance = .fitted
+        state.calibrationSession.calibration.originProvenance = .fileMean
+        state.calibrationSession.calibration.recordedOriginX = 12   // a recorded centre (#348: no aperture fallback)
+        state.calibrationSession.calibration.recordedOriginY = 12
         state.calibrationSession.calibration.rotationRad = 0
         state.calibrationSession.acceleratingVoltage = 300
         XCTAssertNoThrow(try ParallaxPhysicalCalibration.resolve(
-            calibration: state.calibrationSession.calibration, apertureCenterX: state.aperture.centerX,
-            apertureCenterY: state.aperture.centerY, acceleratingVoltageKV: 300), "the premise: the run starts")
+            calibration: state.calibrationSession.calibration, acceleratingVoltageKV: 300), "the premise: the run starts")
         let pre = preprocessing()
         state.phaseContrast.parallaxPreprocess = pre
         state.phaseContrast.parallaxAlignment = try ParallaxAligner.alignNextLevel(preprocessing: pre)
