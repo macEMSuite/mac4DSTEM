@@ -42,7 +42,9 @@ final class MonoclinicLibraryDensityTests: XCTestCase {
         let state = AppState()
         state.descriptor = DatasetDescriptor(
             filePath: "/tmp/b2.h5", datasetPath: "/data",
-            shape: [32, 32, 16, 16], dtypeDescription: "float32", chunkShape: nil)
+            // 128 px: the plan's reach is from the detector's middle (#348); at 16 px it left no reflection, and the old aperture
+            // fallback had hidden that by sitting outside the detector.
+            shape: [32, 32, 128, 128], dtypeDescription: "float32", chunkShape: nil)
         state.acomSession.quality = .balanced
         state.acomSession.modelSelection = .library("au_fcc")
         XCTAssertEqual(state.acomTemplateCount, 200)

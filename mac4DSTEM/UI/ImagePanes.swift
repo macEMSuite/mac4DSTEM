@@ -533,7 +533,7 @@ struct DiffractionPane: View {
         guard let d = appState.descriptor else { return nil }
         return .make(
             calibration: appState.calibrationSession.calibration, descriptor: d, selectedScan: appState.selectedScan,
-            patternMode: appState.patternDisplayMode, regionShape: appState.realSpaceShape, aperture: appState.aperture,
+            patternMode: appState.patternDisplayMode, regionShape: appState.realSpaceShape,
             scaleUnit: appState.patternScaleUnit, mradPerPixel: appState.dpcMilliradiansPerDetectorPixel)
     }
 

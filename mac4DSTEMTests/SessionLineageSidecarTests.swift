@@ -474,9 +474,7 @@ final class SessionLineageSidecarTests: XCTestCase {
         state.aperture = Aperture(centerX: 69.3, centerY: 54.5, inner: 0, outer: 20)
         state.recordOriginCalibrationRun(fitFunction: .plane, method: .centreOfMass, probeRadius: 5, rmsResidual: 0.05)
         _ = state.replay.record(kind: "strain", parameters: ["basis_mode": "consensus"], under: .detectorIdentity)
-        var raw = state.aperture
-        raw.centerX = 70; raw.centerY = 55
-        state.updateAperture(raw)
+        state.setManualOrigin(x: 70, y: 55)   // Prepare's centre by hand (#348; a detector drag before)
 
         let lineage = state.replay.lineage
         let path = url("manual-origin")

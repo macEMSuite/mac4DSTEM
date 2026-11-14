@@ -19,9 +19,10 @@ import DSTEMSession
 extension Mac4DSTEMAgentDoor {
     static let calibrationTools: [AgentTool] = [
         AgentTool(name: "set_calibration", title: "Set calibration",
-                  summary: "Types the Q pixel size, the R pixel size (each with its unit) and the accelerating voltage, as Prepare's "
-                      + "fields do; only the ones given, recorded as manual. A value the file gave is overridden. Answers with the "
-                      + "calibration as get_window shows it.",
+                  summary: "Types the Q pixel size, the R pixel size (each with its unit), the accelerating voltage and a beam centre "
+                      + "by hand (origin_x and origin_y together), as Prepare's fields do; only the ones given, recorded as manual. "
+                      + "A value the file gave is overridden; a fitted origin is set aside (restore_fitted_origin returns it). "
+                      + "Answers with the calibration as get_window shows it.",
                   input: .window,
                   parameters: [
                       AgentParameter("q_pixel_size", .number(1e-9...1e9), summary: "Detector (reciprocal) pixel size, in q_units."),
@@ -30,6 +31,9 @@ extension Mac4DSTEMAgentDoor {
                       AgentParameter("r_pixel_size", .number(1e-9...1e9), summary: "Scan step, in r_units."),
                       AgentParameter("r_units", .text, summary: "Å (A), nm or pm. Default: the unit in force, else nm."),
                       AgentParameter("voltage_kv", .number(1...10_000), summary: "Accelerating voltage, kV."),
+                      AgentParameter("origin_x", .number(-100_000...100_000), summary: "Beam centre column, detector pixels (with origin_y). "
+                                         + "Not a measurement: quantitative steps still ask for Calibrate Origin."),
+                      AgentParameter("origin_y", .number(-100_000...100_000), summary: "Beam centre row, detector pixels (with origin_x)."),
                   ],
                   acts: true) { call in
             guard let state = call.window?.state as? AppState else { return notAWindow }
@@ -44,6 +48,11 @@ extension Mac4DSTEMAgentDoor {
             if let rUnits, rUnits.unit == nil {
                 return .refusal(status: 400, message: "r_units is Å, nm or pm, not \(rUnits.typed).")
             }
+            let originX = arguments["origin_x"].flatMap(Double.init), originY = arguments["origin_y"].flatMap(Double.init)
+            if (originX == nil) != (originY == nil) {
+                return .refusal(status: 400, message: "Give origin_x and origin_y together: a beam centre is one point.")
+            }
+            if let originX, let originY { state.setManualOrigin(x: Float(originX), y: Float(originY)) }
             // The voltage first (mrad needs its wavelength), then each unit before its size, as the row's picker and field.
             if let kV = arguments["voltage_kv"].flatMap(Double.init) { state.setManualAcceleratingVoltage(kV) }
             if let unit = qUnits?.unit { state.setManualQPixelUnits(unit) }

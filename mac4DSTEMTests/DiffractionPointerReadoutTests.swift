@@ -39,7 +39,7 @@ final class DiffractionPointerReadoutTests: XCTestCase {
         Readout.Basis(
             calibration: calibration, detectorQX: 128, detectorQY: 128,
             scanX: scan.x, scanY: scan.y, scanWidth: scanSize.w, scanHeight: scanSize.h,
-            singlePosition: single, apertureCentre: aperture,
+            singlePosition: single,
             milliradians: milliradians, mradPerPixel: mradPerPixel)
     }
 
@@ -251,17 +251,14 @@ final class DiffractionPointerReadoutTests: XCTestCase {
         _ mode: PatternDisplayMode = .current, _ shape: RegionShape = .point, _ unit: PatternScaleUnit = .reciprocal,
         mrad: Float? = nil, scan: ScanPos = ScanPos(x: 2, y: 1), calibration: Calibration = Calibration()
     ) -> Readout.Basis {
-        .make(calibration: calibration, descriptor: descriptor, selectedScan: scan, patternMode: mode, regionShape: shape,
-              aperture: Aperture(centerX: 11, centerY: 22, inner: 0, outer: 5), scaleUnit: unit, mradPerPixel: mrad)
+        .make(calibration: calibration, descriptor: descriptor, selectedScan: scan, patternMode: mode, regionShape: shape, scaleUnit: unit, mradPerPixel: mrad)
     }
 
-    func testTheBasisTakesTheDescriptorsExtentsInTheirOrderAndTheAperturesCentreAsXThenY() {
+    func testTheBasisTakesTheDescriptorsExtentsInTheirOrder() {
         let b = session()
         XCTAssertEqual([b.scanWidth, b.scanHeight], [4, 3], "Rx, then Ry")
         XCTAssertEqual([b.detectorQX, b.detectorQY], [6, 5], "Qx (columns), then Qy (rows)")
         XCTAssertEqual([b.scanX, b.scanY], [2, 1])
-        XCTAssertEqual(b.apertureCentre?.x, 11, "the column")
-        XCTAssertEqual(b.apertureCentre?.y, 22, "the row")
     }
 
     func testOnlyTheCurrentPatternOfAPointSelectionIsTheSinglePosition() {

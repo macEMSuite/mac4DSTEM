@@ -215,10 +215,9 @@ final class PresentationListTests: XCTestCase {
 @MainActor
 final class ApertureDragParksTheFilesCentreTests: XCTestCase {
 
+    /// A centre by hand (Prepare, #348); before #348 a centre drag did this.
     private func drag(_ state: AppState, to x: Float, _ y: Float) {
-        var raw = state.aperture
-        raw.centerX = x; raw.centerY = y
-        state.updateAperture(raw)
+        state.setManualOrigin(x: x, y: y)
     }
 
     /// The demo file records both a mean (32, 32) and fitted maps. Mutation it catches: the
@@ -232,14 +231,14 @@ final class ApertureDragParksTheFilesCentreTests: XCTestCase {
         XCTAssertNotNil(calibration.origin)
 
         drag(state, to: 40, 41)
-        XCTAssertNil(state.calibrationSession.calibration.recordedOriginX, "live origin follows the drag")
+        XCTAssertEqual(state.calibrationSession.calibration.recordedOriginX, 40, "the centre by hand is the live origin (#348)")
         let parked = try XCTUnwrap(state.calibrationSession.parkedRecordedOrigin, "the file's centre is parked")
         XCTAssertEqual(parked.x, 32); XCTAssertEqual(parked.y, 32)
         XCTAssertEqual(state.calibrationSession.calibration.originProvenance, .manual)
         XCTAssertTrue(state.canRestoreFittedOrigin)
         XCTAssertEqual(state.setAsideOriginProvenance, .fileMaps)
         XCTAssertEqual(CalibrationReadinessRow.originReplacedDetail(displaced: state.setAsideOriginProvenance),
-                       "Aperture center replaced the file's origin.")
+                       "A manual centre replaced the file's origin.")
 
         // More ticks of the same drag must not overwrite the parked centre with the dragged one.
         drag(state, to: 41, 42)

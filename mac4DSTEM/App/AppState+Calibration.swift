@@ -127,6 +127,7 @@ extension AppState {
             if let origin = calibrationSession.calibration.meanOrigin {
                 aperture.centerX = origin.x
                 aperture.centerY = origin.y
+                clearManualCentre()
                 calibrationSession.calibration.originProvenance = .fitted
             }
             let rms = result.origin.rmsResidual ?? 0
@@ -194,6 +195,7 @@ extension AppState {
         if let origin = calibrationSession.calibration.meanOrigin {
             aperture.centerX = origin.x
             aperture.centerY = origin.y
+            clearManualCentre()
             calibrationSession.calibration.originProvenance = .fitted
         }
         let rms = maps.rmsResidual ?? 0
@@ -387,10 +389,7 @@ extension AppState {
         guard cancellation?.isCancelled != true else { return nil }
         guard let fourD = datasetSession.fourD, let descriptor else { return nil }
         let origins = calibrationSession.calibration.origin?.interleavedFitted
-        let center = calibrationSession.calibration.referenceOrigin(
-            detectorQX: descriptor.qx, detectorQY: descriptor.qy,
-            apertureCentre: (x: aperture.centerX, y: aperture.centerY)
-        ).point
+        let center = beamPositionGuess(descriptor: descriptor)
         let d = descriptor
         let result = try await VirtualDetector.tiledCenterOfMass(
             data: fourD, descriptor: d, center: center, origins: origins,

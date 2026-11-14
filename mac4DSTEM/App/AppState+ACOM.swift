@@ -65,8 +65,7 @@ extension AppState {
         // is the design's §2 second requirement: the origin must be a
         // MEASURED beam centre (S11's finding, closed structurally).
         if let refusal = gates.reciprocalMetrologyRefusal(
-            for: calibrationSession.calibration, descriptor: descriptor,
-            apertureCentre: (x: aperture.centerX, y: aperture.centerY)
+            for: calibrationSession.calibration, descriptor: descriptor
         ) {
             qCalibration.record(refusal: refusal)
             presentComputeFailure(SimpleError(refusal))
@@ -190,8 +189,7 @@ extension AppState {
     var acomPlanKMax: Double? {
         guard let descriptor else { return nil }
         let origin = calibrationSession.calibration.referenceOrigin(
-            detectorQX: descriptor.qx, detectorQY: descriptor.qy,
-            apertureCentre: (x: aperture.centerX, y: aperture.centerY)
+            detectorQX: descriptor.qx, detectorQY: descriptor.qy
         )
         return OrientationPlan.kMax(originX: Double(origin.x), originY: Double(origin.y),
                                     detectorColumns: descriptor.qx, detectorRows: descriptor.qy,

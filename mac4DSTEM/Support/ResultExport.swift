@@ -424,8 +424,7 @@ extension AppState {
         var keys: [String: String] = [:]
         if let descriptor {
             let origin = calibrationSession.calibration.referenceOrigin(
-                detectorQX: descriptor.qx, detectorQY: descriptor.qy,
-                apertureCentre: (x: aperture.centerX, y: aperture.centerY)
+                detectorQX: descriptor.qx, detectorQY: descriptor.qy
             )
             keys["origin_reference"] = origin.kind.rawValue
             keys["origin_reference_is_measured"] =
@@ -1390,10 +1389,8 @@ extension AppState {
             // than wherever the user last dragged the aperture.
             snapshot.qx0Mean = Double(recorded.y)
             snapshot.qy0Mean = Double(recorded.x)
-        } else if calibrationSession.calibration.originProvenance != .geometricDefault {
-            snapshot.qx0Mean = Double(aperture.centerY)
-            snapshot.qy0Mean = Double(aperture.centerX)
         }
+        // #348: the virtual detector is never saved as the origin (a centre by hand is in the recorded slot above).
         return snapshot
     }
 

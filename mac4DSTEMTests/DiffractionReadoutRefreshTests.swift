@@ -20,7 +20,7 @@ final class DiffractionReadoutRefreshTests: XCTestCase {
 
     private func basis(_ calibration: Calibration, milliradians: Bool = false, mradPerPixel: Float? = nil) -> Readout.Basis {
         Readout.Basis(calibration: calibration, detectorQX: 128, detectorQY: 128, scanX: 0, scanY: 0, scanWidth: 1, scanHeight: 1,
-                      singlePosition: true, apertureCentre: (10, 10), milliradians: milliradians, mradPerPixel: mradPerPixel)
+                      singlePosition: true, milliradians: milliradians, mradPerPixel: mradPerPixel)
     }
 
     private let pattern = DiffractionPattern(qy: 128, qx: 128, pixels: [Float](repeating: 1, count: 128 * 128))

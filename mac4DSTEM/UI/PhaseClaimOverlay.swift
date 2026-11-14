@@ -259,8 +259,7 @@ struct PhaseClaimLayer: View {
         let calibration = appState.calibrationSession.calibration
         return appState.descriptor.map {
             calibration.referenceOrigin(
-                detectorQX: $0.qx, detectorQY: $0.qy,
-                apertureCentre: (x: appState.aperture.centerX, y: appState.aperture.centerY)).point
+                detectorQX: $0.qx, detectorQY: $0.qy).point
         } ?? (x: 0, y: 0)
     }
 

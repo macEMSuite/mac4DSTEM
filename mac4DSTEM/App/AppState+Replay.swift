@@ -302,8 +302,7 @@ extension AppState {
         let resolved: ParallaxPhysicalCalibration
         do {
             resolved = try ParallaxPhysicalCalibration.resolve(
-                calibration: calibrationSession.calibration, apertureCenterX: aperture.centerX,
-                apertureCenterY: aperture.centerY, acceleratingVoltageKV: calibrationSession.acceleratingVoltage)
+                calibration: calibrationSession.calibration, acceleratingVoltageKV: calibrationSession.acceleratingVoltage)
         } catch {
             return "this session's calibration cannot be resolved for parallax — \(error.localizedDescription)"
         }
@@ -316,8 +315,7 @@ extension AppState {
         let resolved: ParallaxPhysicalCalibration
         do {
             resolved = try ParallaxPhysicalCalibration.resolve(
-                calibration: calibrationSession.calibration, apertureCenterX: aperture.centerX,
-                apertureCenterY: aperture.centerY, acceleratingVoltageKV: calibrationSession.acceleratingVoltage)
+                calibration: calibrationSession.calibration, acceleratingVoltageKV: calibrationSession.acceleratingVoltage)
         } catch {
             return "this session's calibration cannot be resolved for ptychography — \(error.localizedDescription)"
         }

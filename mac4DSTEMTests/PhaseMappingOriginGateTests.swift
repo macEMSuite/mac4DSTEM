@@ -26,7 +26,7 @@ final class PhaseMappingOriginGateTests: XCTestCase {
         _ = await state.runDiskDetection()
         XCTAssertNotNil(state.resultPresentation.braggVectors, state.statusText)
         let beam = state.calibrationSession.calibration.referenceOrigin(
-            detectorQX: d.qx, detectorQY: d.qy, apertureCentre: (x: state.aperture.centerX, y: state.aperture.centerY)).point
+            detectorQX: d.qx, detectorQY: d.qy).point
         let count = d.rx * d.ry
         state.calibrationSession.calibration.origin = OriginMaps(
             width: d.rx, height: d.ry, measuredX: Array(repeating: beam.x, count: count),
@@ -49,11 +49,15 @@ final class PhaseMappingOriginGateTests: XCTestCase {
     }
 
     /// Mutation: the origin refusal dropped from `runPhaseMapping` -> the run publishes a map on the detector's centre -> red.
-    func testADetectorMovedOffTheBeamStopsPhaseMappingUntilTheOriginIsBack() async throws {
+    func testAManualCentreStopsPhaseMappingUntilTheOriginIsBack() async throws {
         let state = try await preparedState()
         XCTAssertNil(state.phaseMappingOriginRefusal, "a fitted origin is a measured beam centre")
 
+        // #348: moving the detector off the beam keeps the fitted origin; a centre set by hand replaces it.
         moveDetector(state, by: 12)
+        XCTAssertNil(state.phaseMappingOriginRefusal, "the detector moved, the origin did not")
+        XCTAssertFalse(state.canRestoreFittedOrigin)
+        state.useDetectorCentreAsOrigin()
         XCTAssertTrue(state.canRestoreFittedOrigin, "precondition: the fitted origin was set aside")
         let refusal = try XCTUnwrap(state.phaseMappingOriginRefusal)
         XCTAssertTrue(refusal.contains("Restore Fitted Origin"), refusal)

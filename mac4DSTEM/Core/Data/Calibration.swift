@@ -29,7 +29,7 @@ package enum OriginProvenance: Equatable, Sendable {
         case .sessionMean:      return "From session file (origin mean)"
         case .sessionMaps:      return "From session file (origin maps)"
         case .fitted:           return "Fitted by calibration"
-        case .manual:           return "Manual aperture center"
+        case .manual:           return "Manual centre"
         }
     }
 
@@ -920,13 +920,9 @@ package nonisolated struct Calibration: Sendable {
     ///    the estimator's 2 px floor and the 7.07 px case is above the band
     ///    where its radius check acts — so this is closed structurally, here,
     ///    rather than watched for.
-    package func originSupportsReciprocalMetrology(
-        detectorQX: Int, detectorQY: Int, apertureCentre: (x: Float, y: Float)?
-    ) -> Bool {
+    package func originSupportsReciprocalMetrology(detectorQX: Int, detectorQY: Int) -> Bool {
         guard originFitIsSane else { return false }
-        return referenceOrigin(
-            detectorQX: detectorQX, detectorQY: detectorQY, apertureCentre: apertureCentre
-        ).kind.isMeasuredBeamCentre
+        return referenceOrigin(detectorQX: detectorQX, detectorQY: detectorQY).kind.isMeasuredBeamCentre
     }
 
     // MARK: - Which origin does an analysis re-centre on? (v2 S13)
@@ -942,10 +938,9 @@ package nonisolated struct Calibration: Sendable {
         /// per-position maps beside it (py4DSTEM's `qx0_mean`/`qy0_mean` — the
         /// ordinary shape of a calibration bundle, not a corner case).
         case recordedMean
-        /// The user's detector placement. A best-effort centre for display; it
-        /// is NOT a statement about where the beam is, because an aperture can
-        /// be moved off the beam deliberately.
-        case apertureCentre
+        /// A centre the person set on purpose in Prepare (Use Detector Centre as Origin, or typed x and y; #348). It is NOT a
+        /// measurement of where the beam is: quantitative steps refuse it as they refused the aperture centre it replaces.
+        case manualCentre
         /// Nothing is known: the detector's geometric middle.
         case geometricMiddle
 
@@ -979,21 +974,16 @@ package nonisolated struct Calibration: Sendable {
     /// aperture centre; `calibrateEllipse` used the aperture unconditionally).
     /// A new caller belongs here, not in a fifth hand-rolled `?? (qx/2, qy/2)`.
     ///
-    /// Order: fitted maps → the recorded mean → the aperture the user placed →
-    /// the geometric middle. `apertureCentre` is optional so a caller with no
-    /// aperture (a harness, an export) gets the same order minus that step
-    /// rather than a different function.
-    package nonisolated func referenceOrigin(
-        detectorQX: Int, detectorQY: Int, apertureCentre: (x: Float, y: Float)?
-    ) -> ReferenceOrigin {
+    /// Order: fitted maps → the recorded mean (or the manual centre set in Prepare, kind `.manualCentre`) → the geometric middle.
+    /// The virtual detector is not in it (#348): placing a detector never moves the origin, as in py4DSTEM and pyxem.
+    package nonisolated func referenceOrigin(detectorQX: Int, detectorQY: Int) -> ReferenceOrigin {
         if let mean = meanOrigin {
             return ReferenceOrigin(x: mean.x, y: mean.y, kind: .fittedMaps)
         }
+        // A manual centre (#348) lives in the recorded slot with provenance `.manual`: it round-trips through the session as a
+        // recorded mean, and here it keeps its own kind so quantitative steps can refuse it.
         if let recorded = recordedMeanOrigin {
-            return ReferenceOrigin(x: recorded.x, y: recorded.y, kind: .recordedMean)
-        }
-        if let apertureCentre {
-            return ReferenceOrigin(x: apertureCentre.x, y: apertureCentre.y, kind: .apertureCentre)
+            return ReferenceOrigin(x: recorded.x, y: recorded.y, kind: originProvenance == .manual ? .manualCentre : .recordedMean)
         }
         return ReferenceOrigin(x: Float(detectorQX) / 2, y: Float(detectorQY) / 2,
                                kind: .geometricMiddle)

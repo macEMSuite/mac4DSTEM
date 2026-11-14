@@ -56,7 +56,6 @@ nonisolated enum DiffractionPointerReadout {
         /// The pattern is the one at the selected scan position (Current, Point shape): the per-position origin applies.
         /// Mean, max and ROI-sum patterns are centred on the mean origin.
         var singlePosition: Bool
-        var apertureCentre: (x: Float, y: Float)?
         var milliradians: Bool
         var mradPerPixel: Float?
     }
@@ -93,10 +92,10 @@ nonisolated enum DiffractionPointerReadout {
     static func origin(_ basis: Basis) -> (x: Float, y: Float)? {
         let calibration = basis.calibration
         guard calibration.originSupportsReciprocalMetrology(
-            detectorQX: basis.detectorQX, detectorQY: basis.detectorQY, apertureCentre: basis.apertureCentre
+            detectorQX: basis.detectorQX, detectorQY: basis.detectorQY
         ) else { return nil }
         let reference = calibration.referenceOrigin(
-            detectorQX: basis.detectorQX, detectorQY: basis.detectorQY, apertureCentre: basis.apertureCentre).point
+            detectorQX: basis.detectorQX, detectorQY: basis.detectorQY).point
         guard basis.singlePosition, basis.scanWidth > 0, basis.scanHeight > 0,
               (0..<basis.scanWidth).contains(basis.scanX), (0..<basis.scanHeight).contains(basis.scanY) else {
             return reference
@@ -192,7 +191,7 @@ extension DiffractionPointerReadout.Basis {
     @MainActor
     static func make(
         calibration: Calibration, descriptor d: DatasetDescriptor, selectedScan: ScanPos,
-        patternMode: PatternDisplayMode, regionShape: RegionShape, aperture: Aperture,
+        patternMode: PatternDisplayMode, regionShape: RegionShape,
         scaleUnit: PatternScaleUnit, mradPerPixel: Float?
     ) -> DiffractionPointerReadout.Basis {
         DiffractionPointerReadout.Basis(
@@ -200,7 +199,6 @@ extension DiffractionPointerReadout.Basis {
             detectorQX: d.qx, detectorQY: d.qy,
             scanX: selectedScan.x, scanY: selectedScan.y, scanWidth: d.rx, scanHeight: d.ry,
             singlePosition: patternMode == .current && regionShape == .point,
-            apertureCentre: (x: aperture.centerX, y: aperture.centerY),
             milliradians: scaleUnit == .milliradians,
             mradPerPixel: mradPerPixel)
     }

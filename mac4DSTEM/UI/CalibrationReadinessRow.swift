@@ -97,8 +97,10 @@ enum CalibrationReadinessRow {
                     }
                     .disabled(appState.isBusy)
                     .accessibilityIdentifier("calibration.action.restoreFittedOrigin")
-                    .help("Reinstates the origin the manual aperture center set aside — the fitted per-position maps and the file's recorded center — and recenters the aperture on it.")
+                    .help("Reinstates the origin the manual centre set aside — the fitted per-position maps and the file's recorded center — and recenters the aperture on it.")
                 }
+                // The centre by hand stays editable while it is in force (#348).
+                if inPrepare { manualOriginFields(appState: appState) }
             }
             // Prepare only: the same view's Info tab says why the saved
             // calibration was not carried (Info is far down; the row is here).
@@ -140,9 +142,9 @@ enum CalibrationReadinessRow {
     static func originReplacedDetail(displaced: OriginProvenance?) -> String {
         switch displaced {
         case .fileMean, .fileMaps:
-            return "Aperture center replaced the file's origin."
+            return "A manual centre replaced the file's origin."
         default:
-            return "Aperture center replaced the fitted origin."
+            return "A manual centre replaced the fitted origin."
         }
     }
 
@@ -186,7 +188,16 @@ enum CalibrationReadinessRow {
                 }
                 .disabled(appState.isBusy)
                 .accessibilityIdentifier("calibration.action.originProbe")
+                // A centre by hand is set here on purpose (#348): placing a virtual detector no longer moves the origin.
+                Button("Use Detector Centre as Origin") {
+                    appState.useDetectorCentreAsOrigin()
+                }
+                .disabled(appState.isBusy || !appState.hasDataset)
+                .accessibilityIdentifier("calibration.action.originFromDetector")
+                .help("Sets the origin to the virtual detector's centre: put the detector on the direct beam first. A centre by hand is "
+                      + "not a measurement; quantitative steps still ask for Calibrate Origin.")
             }
+            manualOriginFields(appState: appState)
         case .ellipse:
             InspectorActionRow {
                 Button("Fit Detector Ellipse") {
@@ -256,6 +267,39 @@ enum CalibrationReadinessRow {
                 onUnitChange: appState.setManualRPixelUnits
             )
         }
+    }
+
+    /// Typed origin, x (column) and y (row) in detector pixels (#348). The fields show the manual centre in force, empty otherwise;
+    /// committing one keeps the other at the current origin.
+    @ViewBuilder
+    static func manualOriginFields(appState: AppState) -> some View {
+        let calibration = appState.calibrationSession.calibration
+        let manual = calibration.originProvenance == .manual ? calibration.recordedMeanOrigin : nil
+        let current: (x: Float, y: Float)? = appState.descriptor.map {
+            calibration.referenceOrigin(detectorQX: $0.qx, detectorQY: $0.qy).point
+        }
+        DisclosureGroup("Set by Hand") {
+            InspectorRow("Origin x") {
+                OptionalNumericField(title: "Origin x", value: manual.map { Double($0.x) },
+                                     format: .number.precision(.fractionLength(0...2)), unit: "px") { x in
+                    appState.setManualOrigin(x: Float(x), y: manual?.y ?? current?.y ?? Float(x))
+                }
+                .labelsHidden()
+                .accessibilityIdentifier("calibration.manualOrigin.x")
+            }
+            .help("The beam centre's column on the detector, in pixels.")
+            InspectorRow("Origin y") {
+                OptionalNumericField(title: "Origin y", value: manual.map { Double($0.y) },
+                                     format: .number.precision(.fractionLength(0...2)), unit: "px") { y in
+                    appState.setManualOrigin(x: manual?.x ?? current?.x ?? Float(y), y: Float(y))
+                }
+                .labelsHidden()
+                .accessibilityIdentifier("calibration.manualOrigin.y")
+            }
+            .help("The beam centre's row on the detector, in pixels.")
+        }
+        .disabled(appState.isBusy || !appState.hasDataset)
+        .accessibilityIdentifier("calibration.manualOrigin")
     }
 
     /// The manual scale as two rows — the value, then its unit per pixel —

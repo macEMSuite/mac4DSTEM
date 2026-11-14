@@ -43,6 +43,10 @@ enum AgentDoorCoverage {
         "calibration.action.originProbe": .tool("run_calibration"),
         "calibration.action.qCrystal": .tool("run_calibration"),
         "calibration.action.restoreFittedOrigin": .tool("run_calibration"),
+        "calibration.action.originFromDetector": .tool("set_calibration"),   // origin_x and origin_y: the centre it reads (#348)
+        "calibration.manualOrigin": .tool("set_calibration"),
+        "calibration.manualOrigin.x": .tool("set_calibration"),
+        "calibration.manualOrigin.y": .tool("set_calibration"),
         "calibration.action.rotation": .tool("run_calibration"),
         "calibration.action.flipRotation180": .tool("run_calibration"),
         "calibration.calibrateOrigin": .tool("run_calibration"),
